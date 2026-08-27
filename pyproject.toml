@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcgill-seat-monitor"
+version = "0.1.0"
+description = "A conservative McGill VSB course-seat monitor for Raspberry Pi"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+mcgill-seat-monitor = "mcgill_seat_monitor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

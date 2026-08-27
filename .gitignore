@@ -1,0 +1,10 @@
+.venv/
+build/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.egg-info/
+.coverage
+.env
+config.toml
+state.json

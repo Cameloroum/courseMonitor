@@ -1,0 +1,30 @@
+[Unit]
+Description=McGill course seat monitor
+Documentation=https://vsb.mcgill.ca/
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=seatmonitor
+Group=seatmonitor
+WorkingDirectory=/opt/mcgill-seat-monitor
+EnvironmentFile=/etc/mcgill-seat-monitor.env
+ExecStart=/opt/mcgill-seat-monitor/.venv/bin/mcgill-seat-monitor --config /etc/mcgill-seat-monitor.toml
+Restart=on-failure
+RestartSec=30s
+TimeoutStopSec=30s
+StateDirectory=mcgill-seat-monitor
+UMask=0077
+
+# The process needs network access and write access only to StateDirectory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

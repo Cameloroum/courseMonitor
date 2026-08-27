@@ -1,0 +1,14 @@
+<addcourse>
+  <errors></errors>
+  <classdata date="1787778051607">
+    <term n="202609" v="Fall 2026"/>
+    <course key="COMP-250" code="COMP" number="250">
+      <uselection key="--202609_2318--" courseKey="COMP-250">
+        <selection key="--202609_2318--" va="cbb1" cmkey="COMP-250">
+          <block type="Lec" key="2318" secNo="001" status="A" u="false"
+                 os="0" isFull="1" c="false" ws="0" wc="80"/>
+        </selection>
+      </uselection>
+    </course>
+  </classdata>
+</addcourse>

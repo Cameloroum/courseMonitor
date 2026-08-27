@@ -1,0 +1,25 @@
+# Copy this file to config.toml. config.toml is ignored by Git.
+poll_interval_seconds = 300
+request_timeout_seconds = 20
+request_retries = 3
+max_backoff_seconds = 3600
+state_file = "./state.json"
+log_level = "INFO"
+
+[[courses]]
+term = "202609"
+subject = "COMP"
+number = "250"
+activity = "Lec"
+section = "001"
+# crn = "2318"  # Optional; VSB calls this the block key.
+
+[notification]
+type = "smtp"
+host = "smtp.gmail.com"
+port = 465
+security = "ssl"  # ssl or starttls
+username_env = "MSM_SMTP_USERNAME"
+password_env = "MSM_SMTP_PASSWORD"
+from_env = "MSM_EMAIL_FROM"
+to_env = "MSM_EMAIL_TO"

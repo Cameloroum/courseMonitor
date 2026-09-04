@@ -22,6 +22,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--check-config", action="store_true", help="validate configuration, then exit")
     parser.add_argument("--test-notification", action="store_true", help="send one test email, then exit")
     parser.add_argument(
+        "--test-weekly-report",
+        action="store_true",
+        help="send a weekly working-report test without resetting its counter",
+    )
+    parser.add_argument(
         "--simulate",
         metavar="STATES",
         help="offline transition demo, e.g. FULL,AVAILABLE,ERROR",
@@ -93,6 +98,15 @@ def main() -> int:
             print(f"notification error: {exc}", file=sys.stderr)
             return 1
         print("test notification sent")
+        return 0
+    if args.test_weekly_report:
+        checks = StateStore(config.state_file).checks_since_report
+        try:
+            SmtpNotifier(config.notification).send_weekly_report(checks)
+        except NotificationError as exc:
+            print(f"notification error: {exc}", file=sys.stderr)
+            return 1
+        print(f"weekly report test sent with {checks} successful check(s)")
         return 0
 
     stop_event = threading.Event()

@@ -24,14 +24,7 @@ class SmtpNotifier:
         return value
 
     def send(self, observation: Observation) -> None:
-        sender = self._environment(self.config.from_env)
-        recipients = [item.strip() for item in self._environment(self.config.to_env).split(",") if item.strip()]
-        username = self._environment(self.config.username_env, required=False)
-        password = self._environment(self.config.password_env, required=bool(username))
-
         message = EmailMessage()
-        message["From"] = sender
-        message["To"] = ", ".join(recipients)
         message["Subject"] = f"Seat available: {observation.target.display_name}"
         seats = "unknown number of" if observation.open_seats is None else str(observation.open_seats)
         message.set_content(
@@ -42,6 +35,24 @@ class SmtpNotifier:
             f"Observed (UTC): {observation.observed_at.isoformat()}\n\n"
             "This service only monitors availability; it does not register you."
         )
+        self._send(message)
+
+    def send_weekly_report(self, checks: int) -> None:
+        message = EmailMessage()
+        message["Subject"] = "McGill seat monitor weekly report"
+        message.set_content(
+            "The McGill seat monitor is working.\n\n"
+            f"Successful checks since the previous weekly report: {checks}."
+        )
+        self._send(message)
+
+    def _send(self, message: EmailMessage) -> None:
+        sender = self._environment(self.config.from_env)
+        recipients = [item.strip() for item in self._environment(self.config.to_env).split(",") if item.strip()]
+        username = self._environment(self.config.username_env, required=False)
+        password = self._environment(self.config.password_env, required=bool(username))
+        message["From"] = sender
+        message["To"] = ", ".join(recipients)
 
         context = ssl.create_default_context()
         try:

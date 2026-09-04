@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import random
 import threading
+from datetime import datetime, timezone
 
 from .config import AppConfig
 from .notifier import NotificationError, SmtpNotifier
@@ -54,6 +55,23 @@ class Monitor:
                     # Do not commit AVAILABLE yet: the next poll will retry delivery.
                     continue
             self.store.save(observation)
+
+        checked_at = datetime.now(timezone.utc)
+        # Count one completed VSB fetch as one check, regardless of how many
+        # CRNs were included in that fetch.
+        checks = self.store.record_successful_check(checked_at)
+        report = self.config.weekly_report
+        if report.enabled and self.store.weekly_report_due(
+            checked_at, report.timezone, report.weekday, report.hour, report.minute
+        ):
+            try:
+                self.notifier.send_weekly_report(checks)
+                self.store.mark_weekly_report_sent(checked_at)
+                self.log.info("weekly working report sent after %d successful checks", checks)
+            except NotificationError as exc:
+                # Leave the report due and retain the counter so a later
+                # successful poll can retry the email without losing history.
+                self.log.error("weekly working report failed: %s", exc)
 
         if self.successful_cycles % 12 == 0:
             self.log.info("health: %d successful poll cycles; monitoring %d target(s)", self.successful_cycles, len(self.config.courses))

@@ -54,6 +54,29 @@ class StateTests(unittest.TestCase):
             self.assertTrue(store.transition(available).notify)
             self.assertTrue(store.transition(available).notify)
 
+    def test_weekly_report_is_due_sunday_at_eight_montreal_time(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            store = StateStore(path)
+            friday = datetime(2026, 9, 4, 21, 0, tzinfo=timezone.utc)
+            store.record_successful_check(friday)
+            before = datetime(2026, 9, 6, 23, 59, tzinfo=timezone.utc)
+            due = datetime(2026, 9, 7, 0, 0, tzinfo=timezone.utc)
+            self.assertFalse(store.weekly_report_due(before, "America/Toronto", 6, 20, 0))
+            self.assertTrue(store.weekly_report_due(due, "America/Toronto", 6, 20, 0))
+
+    def test_weekly_check_count_survives_restart_and_resets_after_report(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            checked_at = datetime(2026, 9, 4, 21, 0, tzinfo=timezone.utc)
+            store = StateStore(path)
+            self.assertEqual(store.record_successful_check(checked_at), 1)
+            self.assertEqual(store.record_successful_check(checked_at), 2)
+            restarted = StateStore(path)
+            self.assertEqual(restarted.checks_since_report, 2)
+            restarted.mark_weekly_report_sent(checked_at)
+            self.assertEqual(StateStore(path).checks_since_report, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

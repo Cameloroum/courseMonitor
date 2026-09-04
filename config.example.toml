@@ -6,6 +6,13 @@ max_backoff_seconds = 3600
 state_file = "./state.json"
 log_level = "INFO"
 
+[weekly_report]
+enabled = true
+timezone = "America/Toronto"
+weekday = "sunday"
+hour = 20
+minute = 0
+
 [[courses]]
 term = "202609"
 subject = "COMP"

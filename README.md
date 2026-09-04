@@ -41,6 +41,14 @@ The following sections are the day-to-day commands for a deployed service. The l
 
 Every five minutes the service makes a read-only HTTPS request to McGill VSB, finds the configured CRN or activity/section, and converts VSB's response into `FULL`, `AVAILABLE`, `CLOSED`, or `UNKNOWN`. It compares that observation with the last good state in `/var/lib/mcgill-seat-monitor/state.json`.
 
+When `[weekly_report]` is enabled, the same service sends a short working-status email at the first successful poll on or after the configured weekly time. The report includes the number of successful poll cycles since the previous report. The counter is stored in the state file, so service restarts do not reset it.
+
+To send the weekly report immediately for testing without resetting its counter:
+
+```bash
+sudo systemd-run --wait --pipe --property=User=seatmonitor --property=EnvironmentFile=/etc/mcgill-seat-monitor.env /opt/mcgill-seat-monitor/.venv/bin/mcgill-seat-monitor --config /etc/mcgill-seat-monitor.toml --test-weekly-report
+```
+
 When a target changes from a non-available state to `AVAILABLE`, the service sends one email. Repeated `AVAILABLE` polls do not send repeated email. If email delivery fails, the available state is not committed, so delivery is retried after the next successful poll. Network and server failures use retries and exponential backoff, while the last good seat state is retained.
 
 ### Change the courses being monitored

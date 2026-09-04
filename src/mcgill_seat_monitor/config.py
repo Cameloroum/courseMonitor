@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import tomllib
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .models import CourseTarget
 
@@ -24,9 +25,19 @@ class SmtpConfig:
 
 
 @dataclass(frozen=True)
+class WeeklyReportConfig:
+    enabled: bool = False
+    timezone: str = "America/Toronto"
+    weekday: int = 6
+    hour: int = 20
+    minute: int = 0
+
+
+@dataclass(frozen=True)
 class AppConfig:
     courses: tuple[CourseTarget, ...]
     notification: SmtpConfig
+    weekly_report: WeeklyReportConfig = WeeklyReportConfig()
     poll_interval_seconds: int = 300
     request_timeout_seconds: int = 20
     request_retries: int = 3
@@ -96,6 +107,40 @@ def load_config(path: Path) -> AppConfig:
         to_env=str(notification.get("to_env", "MSM_EMAIL_TO")),
     )
 
+    raw_weekly = data.get("weekly_report", {})
+    if not isinstance(raw_weekly, dict):
+        raise ConfigError("weekly_report must be a TOML table")
+    weekdays = {
+        "monday": 0,
+        "tuesday": 1,
+        "wednesday": 2,
+        "thursday": 3,
+        "friday": 4,
+        "saturday": 5,
+        "sunday": 6,
+    }
+    weekday_name = str(raw_weekly.get("weekday", "sunday")).lower()
+    if weekday_name not in weekdays:
+        raise ConfigError("weekly_report.weekday must be a weekday name")
+    report_hour = int(raw_weekly.get("hour", 20))
+    report_minute = int(raw_weekly.get("minute", 0))
+    if not 0 <= report_hour <= 23:
+        raise ConfigError("weekly_report.hour must be between 0 and 23")
+    if not 0 <= report_minute <= 59:
+        raise ConfigError("weekly_report.minute must be between 0 and 59")
+    report_timezone = str(raw_weekly.get("timezone", "America/Toronto"))
+    try:
+        ZoneInfo(report_timezone)
+    except ZoneInfoNotFoundError as exc:
+        raise ConfigError(f"unknown weekly_report.timezone: {report_timezone}") from exc
+    weekly_report = WeeklyReportConfig(
+        enabled=bool(raw_weekly.get("enabled", False)),
+        timezone=report_timezone,
+        weekday=weekdays[weekday_name],
+        hour=report_hour,
+        minute=report_minute,
+    )
+
     poll_interval = int(data.get("poll_interval_seconds", 300))
     if poll_interval < 60:
         raise ConfigError("poll_interval_seconds must be at least 60")
@@ -110,6 +155,7 @@ def load_config(path: Path) -> AppConfig:
     return AppConfig(
         courses=tuple(courses),
         notification=smtp,
+        weekly_report=weekly_report,
         poll_interval_seconds=poll_interval,
         request_timeout_seconds=int(data.get("request_timeout_seconds", 20)),
         request_retries=retries,
